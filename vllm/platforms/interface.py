@@ -1121,6 +1121,16 @@ class Platform:
         return False
 
     @classmethod
+    def opaque_gdn_attention_op(cls) -> bool:
+        """Whether CPU GDN attention runs behind one opaque custom op.
+
+        Platforms may return ``False`` to trace through the existing GDN
+        implementation and expose its forward-context state and metadata as
+        graph inputs.
+        """
+        return True
+
+    @classmethod
     def validate_request(
         cls,
         processed_inputs: "EngineInput",

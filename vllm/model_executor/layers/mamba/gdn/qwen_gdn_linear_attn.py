@@ -383,10 +383,16 @@ class QwenGatedDeltaNetAttention(GatedDeltaNetAttention):
             self._forward_method = self.forward_xpu
         elif current_platform.is_cpu():
             from vllm.model_executor.layers.mamba.ops.cpu.gdn_attention import (
+                cpu_gdn_attention_core,
                 register_cpu_gdn_attention_ops,
             )
 
             register_cpu_gdn_attention_ops()
+            self._gdn_attention_core = (
+                cpu_gdn_attention_core
+                if not current_platform.opaque_gdn_attention_op()
+                else torch.ops.vllm.cpu_gdn_attention_core
+            )
             self._forward_method = self.forward_cpu
         elif current_platform.is_rocm():
             self._forward_method = self.forward_hip
@@ -1032,7 +1038,7 @@ class QwenGatedDeltaNetAttention(GatedDeltaNetAttention):
             device=hidden_states.device,
         )
 
-        torch.ops.vllm.cpu_gdn_attention_core(
+        self._gdn_attention_core(
             mixed_qkv,
             b,
             a,
